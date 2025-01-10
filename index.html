@@ -24,9 +24,9 @@
             padding: 20px;
         }
         img {
-            max-width: 300px;
+            max-width: 200px;
             height: auto;
-            margin: 20px 0;
+            margin: 20px;
         }
         .info {
             font-size: 1.2em;
@@ -42,6 +42,26 @@
             font-size: 1.5em;
             color: #2c3e50;
             margin-top: 20px;
+        }
+        .vote-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+        }
+        .vote-item {
+            margin: 0 20px;
+            text-align: center;
+        }
+        .vote-button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+        }
+        .vote-count {
+            margin-top: 10px;
+            font-size: 1.2em;
         }
     </style>
 </head>
@@ -60,22 +80,51 @@
         <div class="counter">
             このページは <span id="visitCount">0</span> 回訪問されています。
         </div>
+        <div class="vote-container">
+            <div class="vote-item">
+                <img src="syake.webp" alt="鮭">
+                <button class="vote-button" onclick="vote('syake')">投票する</button>
+                <div class="vote-count">投票数: <span id="syakeCount">0</span></div>
+            </div>
+            <div class="vote-item">
+                <img src="ume.webp" alt="梅干し">
+                <button class="vote-button" onclick="vote('ume')">投票する</button>
+                <div class="vote-count">投票数: <span id="umeCount">0</span></div>
+            </div>
+        </div>
     </main>
     <footer>
         <p>&copy; 2025 ONIGIRI Coin. All Rights Reserved.</p>
     </footer>
 
     <script>
-        // カウンターの初期化
+        // ページ訪問カウンター
         let visitCount = localStorage.getItem('visitCount');
         if (!visitCount) {
             visitCount = 0;
         }
         visitCount++;
         localStorage.setItem('visitCount', visitCount);
-
-        // カウンターを表示
         document.getElementById('visitCount').textContent = visitCount;
+
+        // 投票カウンター
+        let syakeCount = localStorage.getItem('syakeCount') || 0;
+        let umeCount = localStorage.getItem('umeCount') || 0;
+
+        document.getElementById('syakeCount').textContent = syakeCount;
+        document.getElementById('umeCount').textContent = umeCount;
+
+        function vote(item) {
+            if (item === 'syake') {
+                syakeCount++;
+                localStorage.setItem('syakeCount', syakeCount);
+                document.getElementById('syakeCount').textContent = syakeCount;
+            } else if (item === 'ume') {
+                umeCount++;
+                localStorage.setItem('umeCount', umeCount);
+                document.getElementById('umeCount').textContent = umeCount;
+            }
+        }
     </script>
 </body>
 </html>
