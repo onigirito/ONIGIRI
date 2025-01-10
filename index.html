@@ -38,6 +38,11 @@
             padding: 10px 0;
             margin-top: 20px;
         }
+        .counter {
+            font-size: 1.5em;
+            color: #2c3e50;
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
@@ -47,14 +52,30 @@
     <main>
         <img src="onigiri2.png" alt="ONIGIRI コインのデザイン">
         <p class="info"><strong>発行量:</strong> 22m</p>
-         <p class="info"><strong>issue volume:</strong> 22m</p>
+        <p class="info"><strong>issue volume:</strong> 22m</p>
         <p class="info"><strong>日本の文化おにぎり:</strong></p>
         <p class="info"><strong>Japanese Culture Onigiri:</strong></p>
         <p>どんな味がお好みですか？</p>
         <p>What flavor do you prefer?</p>
+        <div class="counter">
+            このページは <span id="visitCount">0</span> 回訪問されています。
+        </div>
     </main>
     <footer>
         <p>&copy; 2025 ONIGIRI Coin. All Rights Reserved.</p>
     </footer>
+
+    <script>
+        // カウンターの初期化
+        let visitCount = localStorage.getItem('visitCount');
+        if (!visitCount) {
+            visitCount = 0;
+        }
+        visitCount++;
+        localStorage.setItem('visitCount', visitCount);
+
+        // カウンターを表示
+        document.getElementById('visitCount').textContent = visitCount;
+    </script>
 </body>
 </html>
