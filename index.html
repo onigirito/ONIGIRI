@@ -67,6 +67,19 @@
             margin-top: 30px;
             font-size: 1.2em;
         }
+        .additional-links {
+            margin-top: 20px;
+            text-align: left;
+            display: inline-block;
+        }
+        .additional-links a {
+            color: #007BFF;
+            text-decoration: none;
+            font-size: 1em;
+        }
+        .additional-links a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -76,30 +89,39 @@
     <main>
         <img src="onigiri2.png" alt="ONIGIRI コインのデザイン">
         <p class="info"><strong>発行量:</strong> 22m</p>
-        <p class="info"><strong>issue volume:</strong> 22m</p>
-        <p class="info"><strong>日本の文化おにぎり:</strong></p>
-        <p class="info"><strong>Japanese Culture Onigiri:</strong></p>
-        <p>どんな味がお好みですか？</p>
-        <p>What flavor do you prefer?</p>
+        <p class="info"><strong>Issue Volume:</strong> 22m</p>
+        <p class="info"><strong>日本の文化おにぎり:</strong> 日本のおにぎり具材を世界中で人気投票。</p>
+        <p class="info"><strong>Japanese Culture Onigiri:</strong> Host global popularity voting for Japanese onigiri ingredients.</p>
+        <p>どんな味がお好みですか？ / What flavor do you prefer?</p>
         <div class="counter">
-            このページは <span id="visitCount">0</span> 回訪問されています。
+            このページは <span id="visitCount">0</span> 回訪問されています。 / This page has been visited <span id="visitCount">0</span> times.
         </div>
         <div class="vote-container">
             <div class="vote-item">
                 <img src="syake.webp" alt="鮭">
-                <button class="vote-button" onclick="vote('syake')">投票する</button>
-                <div class="vote-count">投票数: <span id="syakeCount">0</span></div>
+                <button class="vote-button" onclick="vote('syake')">投票する / Vote</button>
+                <div class="vote-count">投票数: <span id="syakeCount">0</span> / Votes: <span id="syakeCount">0</span></div>
             </div>
             <div class="vote-item">
                 <img src="ume.webp" alt="梅干し">
-                <button class="vote-button" onclick="vote('ume')">投票する</button>
-                <div class="vote-count">投票数: <span id="umeCount">0</span></div>
+                <button class="vote-button" onclick="vote('ume')">投票する / Vote</button>
+                <div class="vote-count">投票数: <span id="umeCount">0</span> / Votes: <span id="umeCount">0</span></div>
             </div>
         </div>
 
         <!-- ホワイトペーパーへのリンク -->
         <div class="wp-link">
             <a href="wp.html" target="_blank">ホワイトペーパーはこちら / View the Whitepaper</a>
+        </div>
+
+        <!-- Additional Links -->
+        <div class="additional-links">
+            <p><strong>Solscan:</strong> <a href="https://solscan.io/token/Va7yuUnSYdg23QjHjPAc9fkBrK3oD4mr3Ee52vFcyev" target="_blank">https://solscan.io/token/Va7yuUnSYdg23QjHjPAc9fkBrK3oD4mr3Ee52vFcyev</a></p>
+            <p><strong>取引所 / Exchanges:</strong></p>
+            <ul>
+                <li><a href="https://photon-sol.tinyastro.io/en/lp/2WBSLsjagCt3BLncpwBrprFF5uhFz8WbdrpvGvueZ8tz?handle=1251539d453dedad0ff9e8" target="_blank">Photon SOL</a></li>
+                <li><a href="https://www.geckoterminal.com/solana/pools/2WBSLsjagCt3BLncpwBrprFF5uhFz8WbdrpvGvueZ8tz" target="_blank">GeckoTerminal</a></li>
+            </ul>
         </div>
     </main>
     <footer>
