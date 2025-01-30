@@ -29,9 +29,34 @@
             border-radius: 12px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
+        img {
+            max-width: 200px;
+            height: auto;
+            margin: 20px;
+        }
+        .info {
+            font-size: 1.2em;
+            margin: 10px 0;
+        }
+        footer {
+            background-color: #2c3e50;
+            color: white;
+            padding: 10px 0;
+            margin-top: 20px;
+        }
+        .vote-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+        }
+        .vote-item {
+            margin: 0 20px;
+            text-align: center;
+        }
         .vote-button {
             margin-top: 10px;
-            padding: 12px 18px;
+            padding: 10px 20px;
             font-size: 1em;
             cursor: pointer;
             border: none;
@@ -43,12 +68,22 @@
         .vote-button:hover {
             background-color: #2980b9;
         }
-        footer {
-            background-color: #2c3e50;
-            color: white;
-            padding: 10px 0;
+        .wp-link {
+            margin-top: 30px;
+            font-size: 1.2em;
+        }
+        .additional-links {
             margin-top: 20px;
-            font-size: 0.9em;
+            text-align: left;
+            display: inline-block;
+        }
+        .additional-links a {
+            color: #007BFF;
+            text-decoration: none;
+            font-size: 1em;
+        }
+        .additional-links a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -57,9 +92,38 @@
         <h1>ONIGIRI コイン (GRI)</h1>
     </header>
     <main>
-        <p><strong>発行量:</strong> 22m</p>
+        <img src="onigiri2.png" alt="ONIGIRI コイン">
+        <p class="info"><strong>発行量:</strong> 22m</p>
+        <p class="info"><strong>どんな味がお好みですか？ / What flavor do you prefer?</strong></p>
+
+        <div class="vote-container">
+            <div class="vote-item">
+                <img src="syake.webp" alt="鮭">
+                <button class="vote-button" onclick="vote('syake')">投票する / Vote</button>
+                <div>投票数: <span id="syakeCount">0</span></div>
+            </div>
+            <div class="vote-item">
+                <img src="ume.webp" alt="梅干し">
+                <button class="vote-button" onclick="vote('ume')">投票する / Vote</button>
+                <div>投票数: <span id="umeCount">0</span></div>
+            </div>
+        </div>
+
         <button id="connectWallet" class="vote-button">ウォレットを接続 / Connect Wallet</button>
         <p id="walletAddress">ウォレット未接続 / Wallet not connected</p>
+
+        <div class="wp-link">
+            <a href="wp.html" target="_blank">ホワイトペーパーはこちら / View the Whitepaper</a>
+        </div>
+
+        <div class="additional-links">
+            <p><strong>Solscan:</strong> <a href="https://solscan.io/token/Va7yuUnSYdg23QjHjPAc9fkBrK3oD4mr3Ee52vFcyev" target="_blank">GRI トークン情報</a></p>
+            <p><strong>取引所 / Exchanges:</strong></p>
+            <ul>
+                <li><a href="https://photon-sol.tinyastro.io/en/lp/xxxx" target="_blank">Photon SOL</a></li>
+                <li><a href="https://www.geckoterminal.com/solana/pools/xxxx" target="_blank">GeckoTerminal</a></li>
+            </ul>
+        </div>
     </main>
     <footer>
         <p>&copy; 2025 ONIGIRI Coin. All Rights Reserved.</p>
@@ -95,7 +159,6 @@
         });
     </script>
 
-    <!-- Solana Web3.js -->
     <script src="https://unpkg.com/@solana/web3.js@1.30.0/lib/index.iife.min.js"></script>
 </body>
 </html>
