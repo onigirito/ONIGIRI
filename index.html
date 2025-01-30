@@ -111,6 +111,7 @@
 
         <button id="connectWallet" class="vote-button">ウォレットを接続 / Connect Wallet</button>
         <p id="walletAddress">ウォレット未接続 / Wallet not connected</p>
+        <p id="griBalance">GRI 残高: -</p>
 
         <div class="wp-link">
             <a href="wp.html" target="_blank">ホワイトペーパーはこちら / View the Whitepaper</a>
@@ -131,34 +132,67 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            console.log("DOM読み込み完了");
+            console.log("✅ DOMが読み込まれました");
 
             const connectButton = document.getElementById("connectWallet");
             if (!connectButton) {
-                console.error("connectWallet ボタンが見つかりません。");
+                console.error("❌ connectWallet ボタンが見つかりません。HTMLを確認してください。");
                 return;
             }
 
             connectButton.addEventListener("click", async function () {
-                console.log("ウォレット接続ボタンが押されました");
-
-                if (!window.solana || !window.solana.isPhantom) {
-                    alert("Phantomウォレットがインストールされていません。");
-                    return;
-                }
+                console.log("🔵 ウォレット接続ボタンが押されました");
 
                 try {
-                    const response = await window.solana.connect();
-                    console.log("ウォレット接続成功:", response.publicKey.toString());
+                    console.log("🟡 ウォレット接続を試みます...");
+                    const response = await window.solana.connect({ onlyIfTrusted: false });
+
+                    if (!window.solana.isConnected) {
+                        alert("❌ ウォレットが適切に接続されませんでした。もう一度試してください。");
+                        console.error("❌ window.solana.isConnected が false になっています。");
+                        return;
+                    }
+
+                    console.log("✅ ウォレット接続成功:", response.publicKey.toString());
                     document.getElementById("walletAddress").textContent = `ウォレット: ${response.publicKey.toString()}`;
+
+                    await fetchGRIBalance(response.publicKey.toString());
+
                 } catch (error) {
-                    console.error("ウォレット接続エラー:", error.message);
-                    alert(`ウォレット接続に失敗しました: ${error.message}`);
+                    console.error("❌ ウォレット接続エラー:", error.message);
+                    alert(`❌ ウォレット接続に失敗しました: ${error.message}`);
                 }
             });
+
+            async function fetchGRIBalance(walletAddress) {
+                console.log("🟡 GRI 残高を取得中...");
+
+                try {
+                    const connection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com", "confirmed");
+                    const GRI_TOKEN_MINT_ADDRESS = "Va7yuUnSYdg23QjHjPAc9fkBrK3oD4mr3Ee52vFcyev";
+
+                    const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
+                        new solanaWeb3.PublicKey(walletAddress),
+                        { programId: new solanaWeb3.PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA") }
+                    );
+
+                    let griBalance = 0;
+                    tokenAccounts.value.forEach(account => {
+                        if (account.account.data.parsed.info.mint === GRI_TOKEN_MINT_ADDRESS) {
+                            griBalance = account.account.data.parsed.info.tokenAmount.uiAmount;
+                        }
+                    });
+
+                    console.log("✅ GRI 残高取得成功:", griBalance);
+                    document.getElementById("griBalance").textContent = `GRI 残高: ${griBalance} GRI`;
+
+                } catch (error) {
+                    console.error("❌ GRIトークン取得エラー:", error.message);
+                    document.getElementById("griBalance").textContent = "GRI 残高: エラー";
+                }
+            }
         });
     </script>
-
     <script src="https://unpkg.com/@solana/web3.js@1.30.0/lib/index.iife.min.js"></script>
 </body>
 </html>
