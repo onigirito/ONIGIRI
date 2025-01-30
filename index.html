@@ -60,6 +60,23 @@
         .vote-button:hover {
             background-color: #2980b9;
         }
+        .wp-link {
+            margin-top: 25px;
+            font-size: 1.2em;
+        }
+        .additional-links {
+            margin-top: 15px;
+            text-align: left;
+            display: inline-block;
+        }
+        .additional-links a {
+            color: #3498db;
+            text-decoration: none;
+            font-size: 1em;
+        }
+        .additional-links a:hover {
+            text-decoration: underline;
+        }
         footer {
             background-color: #2c3e50;
             color: white;
@@ -74,83 +91,70 @@
         <h1>ONIGIRI コイン (GRI)</h1>
     </header>
     <main>
-        <img src="https://ucarecdn.com/1312cc2f-4fb5-4d02-9614-d1e5eeca68cd/-/format/auto/" alt="ONIGIRI コイン">
+        <img src="onigiri2.png" alt="ONIGIRI コイン">
         <p><strong>発行量:</strong> 22m</p>
         <p>どんな味がお好みですか？ / What flavor do you prefer?</p>
 
         <div class="vote-container">
             <div class="vote-item">
-                <img src="https://ucarecdn.com/df215c72-efcd-4e81-a25e-d62b44e5f8d6/" alt="鮭">
+                <img src="syake.webp" alt="鮭">
                 <button class="vote-button" onclick="vote('syake')">投票する / Vote</button>
                 <div>投票数: <span id="syakeCount">0</span></div>
             </div>
             <div class="vote-item">
-                <img src="https://ucarecdn.com/d906bc90-4c8e-4e25-8d94-94042caddde9/" alt="梅干し">
+                <img src="ume.webp" alt="梅干し">
                 <button class="vote-button" onclick="vote('ume')">投票する / Vote</button>
                 <div>投票数: <span id="umeCount">0</span></div>
             </div>
         </div>
 
+        <!-- ウォレット接続 -->
         <button id="connectWallet" class="vote-button">ウォレットを接続 / Connect Wallet</button>
         <p id="walletAddress">ウォレット未接続 / Wallet not connected</p>
         <p id="solBalance">SOL 残高: -</p>
         <p id="griBalance">GRI 残高: -</p>
+
+        <!-- ホワイトペーパーのリンク -->
+        <div class="wp-link">
+            <a href="wp.html" target="_blank">ホワイトペーパーはこちら / View the Whitepaper</a>
+        </div>
+
+        <!-- 追加リンク (Solscan, 取引所) -->
+        <div class="additional-links">
+            <p><strong>Solscan:</strong> <a href="https://solscan.io/token/Va7yuUnSYdg23QjHjPAc9fkBrK3oD4mr3Ee52vFcyev" target="_blank">GRI トークン情報</a></p>
+            <p><strong>取引所 / Exchanges:</strong></p>
+            <ul>
+                <li><a href="https://photon-sol.tinyastro.io/en/lp/xxxx" target="_blank">Photon SOL</a></li>
+                <li><a href="https://www.geckoterminal.com/solana/pools/xxxx" target="_blank">GeckoTerminal</a></li>
+            </ul>
+        </div>
     </main>
     <footer>
         <p>&copy; 2025 ONIGIRI Coin. All Rights Reserved.</p>
     </footer>
 
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const connectButton = document.getElementById("connectWallet");
-            if (!connectButton) {
-                console.error("connectWallet ボタンが見つかりません");
+        async function connectWallet() {
+            if (!window.solana || !window.solana.isPhantom) {
+                alert("Phantomウォレットがインストールされていません。");
                 return;
             }
 
-            connectButton.addEventListener("click", async function () {
-                console.log("ウォレット接続ボタンが押されました");
+            try {
+                const response = await window.solana.connect();
+                document.getElementById("walletAddress").textContent = `ウォレット: ${response.publicKey.toString()}`;
 
-                if (!window.solana || !window.solana.isPhantom) {
-                    alert("Phantomウォレットがインストールされていません。");
-                    return;
-                }
+                // 🚀 Solana RPCエンドポイントをAlchmeyに変更
+                const connection = new solanaWeb3.Connection("https://solana-mainnet.g.alchemy.com/v2/YOUR_API_KEY", "confirmed");
 
-                try {
-                    const response = await window.solana.connect({ onlyIfTrusted: false });
-                    console.log("Connected:", response.publicKey.toString());
-                    document.getElementById("walletAddress").textContent = `ウォレット: ${response.publicKey.toString()}`;
+                // SOL 残高取得
+                const solBalance = await connection.getBalance(new solanaWeb3.PublicKey(response.publicKey.toString()));
+                document.getElementById("solBalance").textContent = `SOL 残高: ${(solBalance / solanaWeb3.LAMPORTS_PER_SOL).toFixed(4)} SOL`;
 
-                    // Solanaの接続設定
-                    const connection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com", "confirmed");
-
-                    // SOL 残高取得
-                    const solBalance = await connection.getBalance(new solanaWeb3.PublicKey(response.publicKey.toString()));
-                    document.getElementById("solBalance").textContent = `SOL 残高: ${(solBalance / solanaWeb3.LAMPORTS_PER_SOL).toFixed(4)} SOL`;
-
-                    // GRI トークン残高取得
-                    const GRI_TOKEN_MINT_ADDRESS = "Va7yuUnSYdg23QjHjPAc9fkBrK3oD4mr3Ee52vFcyev";
-                    const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
-                        new solanaWeb3.PublicKey(response.publicKey.toString()),
-                        { programId: new solanaWeb3.PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA") }
-                    );
-
-                    let griBalance = 0;
-                    tokenAccounts.value.forEach(account => {
-                        const mint = account.account.data.parsed.info.mint;
-                        if (mint === GRI_TOKEN_MINT_ADDRESS) {
-                            griBalance = account.account.data.parsed.info.tokenAmount.uiAmount;
-                        }
-                    });
-
-                    document.getElementById("griBalance").textContent = `GRI 残高: ${griBalance} GRI`;
-
-                } catch (error) {
-                    console.error("ウォレット接続エラー:", error.message);
-                    alert(`ウォレット接続に失敗しました: ${error.message}`);
-                }
-            });
-        });
+            } catch (error) {
+                alert(`ウォレット接続に失敗しました: ${error.message}`);
+            }
+        }
 
         function vote(item) {
             let countElement = document.getElementById(item + "Count");
@@ -158,9 +162,11 @@
             count++;
             countElement.textContent = count;
         }
+
+        document.getElementById("connectWallet").addEventListener("click", connectWallet);
     </script>
 
-    <!-- Solana Web3.jsライブラリ -->
+    <!-- Solana Web3.js -->
     <script src="https://unpkg.com/@solana/web3.js@1.30.0/lib/index.iife.min.js"></script>
 </body>
 </html>
