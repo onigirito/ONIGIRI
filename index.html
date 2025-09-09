@@ -1,198 +1,252 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ONIGIRI コイン</title>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: "Noto Sans JP", sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f8f8f8;
-            text-align: center;
-            color: #333;
-        }
-        header {
-            background-color: #2c3e50;
-            color: white;
-            padding: 15px 0;
-            font-size: 1.5em;
-        }
-        main {
-            width: 80%;
-            max-width: 800px;
-            margin: 20px auto;
-            padding: 20px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        }
-        img {
-            max-width: 200px;
-            height: auto;
-            margin: 20px;
-        }
-        .info {
-            font-size: 1.2em;
-            margin: 10px 0;
-        }
-        footer {
-            background-color: #2c3e50;
-            color: white;
-            padding: 10px 0;
-            margin-top: 20px;
-        }
-        .vote-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-top: 20px;
-        }
-        .vote-item {
-            margin: 0 20px;
-            text-align: center;
-        }
-        .vote-button {
-            margin-top: 10px;
-            padding: 10px 20px;
-            font-size: 1em;
-            cursor: pointer;
-            border: none;
-            background-color: #3498db;
-            color: white;
-            border-radius: 10px;
-            transition: background 0.3s;
-        }
-        .vote-button:hover {
-            background-color: #2980b9;
-        }
-        .wp-link {
-            margin-top: 30px;
-            font-size: 1.2em;
-        }
-        .additional-links {
-            margin-top: 20px;
-            text-align: left;
-            display: inline-block;
-        }
-        .additional-links a {
-            color: #007BFF;
-            text-decoration: none;
-            font-size: 1em;
-        }
-        .additional-links a:hover {
-            text-decoration: underline;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ONIGIRI コイン</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: "Noto Sans JP", sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f8f8f8;
+      text-align: center;
+      color: #333;
+    }
+    header {
+      background-color: #2c3e50;
+      color: white;
+      padding: 15px 0;
+      font-size: 1.5em;
+    }
+    main {
+      width: 80%;
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 20px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    img {
+      max-width: 200px;
+      height: auto;
+      margin: 20px;
+    }
+    .info {
+      font-size: 1.2em;
+      margin: 10px 0;
+    }
+    footer {
+      background-color: #2c3e50;
+      color: white;
+      padding: 10px 0;
+      margin-top: 20px;
+    }
+    .vote-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 20px;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .vote-item {
+      margin: 0 20px;
+      text-align: center;
+    }
+    .vote-button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      font-size: 1em;
+      cursor: pointer;
+      border: none;
+      background-color: #3498db;
+      color: white;
+      border-radius: 10px;
+      transition: background 0.3s;
+    }
+    .vote-button:hover { background-color: #2980b9; }
+    .wp-link { margin-top: 30px; font-size: 1.2em; }
+    .additional-links { margin-top: 20px; text-align: left; display: inline-block; }
+    .additional-links a { color: #007BFF; text-decoration: none; font-size: 1em; }
+    .additional-links a:hover { text-decoration: underline; }
+    .muted { opacity: .75; font-size: .95em; }
+  </style>
 </head>
 <body>
-    <header>
-        <h1>ONIGIRI コイン (GRI)</h1>
-    </header>
-    <main>
-        <img src="onigiri2.png" alt="ONIGIRI コイン">
-        <p class="info"><strong>発行量:</strong> 22m</p>
-        <p class="info"><strong>どんな味がお好みですか？ / What flavor do you prefer?</strong></p>
+  <header>
+    <h1>ONIGIRI コイン (GRI)</h1>
+  </header>
+  <main>
+    <img src="onigiri2.png" alt="ONIGIRI コイン" />
+    <p class="info"><strong>発行量:</strong> 22m</p>
+    <p class="info"><strong>どんな味がお好みですか？ / What flavor do you prefer?</strong></p>
 
-        <div class="vote-container">
-            <div class="vote-item">
-                <img src="syake.webp" alt="鮭">
-                <button class="vote-button" onclick="vote('syake')">投票する / Vote</button>
-                <div>投票数: <span id="syakeCount">0</span></div>
-            </div>
-            <div class="vote-item">
-                <img src="ume.webp" alt="梅干し">
-                <button class="vote-button" onclick="vote('ume')">投票する / Vote</button>
-                <div>投票数: <span id="umeCount">0</span></div>
-            </div>
-        </div>
+    <div class="vote-container">
+      <div class="vote-item">
+        <img src="syake.webp" alt="鮭" />
+        <button class="vote-button" onclick="vote('syake')">投票する / Vote</button>
+        <div>投票数: <span id="syakeCount">0</span></div>
+      </div>
+      <div class="vote-item">
+        <img src="ume.webp" alt="梅干し" />
+        <button class="vote-button" onclick="vote('ume')">投票する / Vote</button>
+        <div>投票数: <span id="umeCount">0</span></div>
+      </div>
+    </div>
 
-        <button id="connectWallet" class="vote-button">ウォレットを接続 / Connect Wallet</button>
-        <p id="walletAddress">ウォレット未接続 / Wallet not connected</p>
-        <p id="griBalance">GRI 残高: -</p>
+    <button id="connectWallet" class="vote-button">ウォレットを接続 / Connect Wallet</button>
+    <p id="walletAddress">ウォレット未接続 / Wallet not connected</p>
+    <p id="griBalance">GRI 残高: -</p>
+    <p id="hint" class="muted" style="display:none"></p>
 
-        <div class="wp-link">
-            <a href="wp.html" target="_blank">ホワイトペーパーはこちら / View the Whitepaper</a>
-        </div>
+    <div class="wp-link">
+      <a href="wp.html" target="_blank">ホワイトペーパーはこちら / View the Whitepaper</a>
+    </div>
 
-        <div class="additional-links">
-            <p><strong>Solscan:</strong> <a href="https://solscan.io/token/Va7yuUnSYdg23QjHjPAc9fkBrK3oD4mr3Ee52vFcyev" target="_blank">GRI トークン情報</a></p>
-            <p><strong>取引所 / Exchanges:</strong></p>
-            <ul>
-                <li><a href="https://photon-sol.tinyastro.io/en/lp/2WBSLsjagCt3BLncpwBrprFF5uhFz8WbdrpvGvueZ8tz" target="_blank">Photon SOL</a></li>
-                <li><a href="https://www.geckoterminal.com/solana/pools/2WBSLsjagCt3BLncpwBrprFF5uhFz8WbdrpvGvueZ8tz" target="_blank">GeckoTerminal</a></li>
-            </ul>
-        </div>
-    </main>
-    <footer>
-        <p>&copy; 2025 ONIGIRI Coin. All Rights Reserved.</p>
-    </footer>
+    <div class="additional-links">
+      <p><strong>Solscan:</strong> <a href="https://solscan.io/token/Va7yuUnSYdg23QjHjPAc9fkBrK3oD4mr3Ee52vFcyev" target="_blank">GRI トークン情報</a></p>
+      <p><strong>取引所 / Exchanges:</strong></p>
+      <ul>
+        <li><a href="https://photon-sol.tinyastro.io/en/lp/2WBSLsjagCt3BLncpwBrprFF5uhFz8WbdrpvGvueZ8tz" target="_blank">Photon SOL</a></li>
+        <li><a href="https://www.geckoterminal.com/solana/pools/2WBSLsjagCt3BLncpwBrprFF5uhFz8WbdrpvGvueZ8tz" target="_blank">GeckoTerminal</a></li>
+      </ul>
+    </div>
+  </main>
+  <footer>
+    <p>&copy; 2025 ONIGIRI Coin. All Rights Reserved.</p>
+  </footer>
 
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            console.log("✅ DOMが読み込まれました");
+  <!-- Solana Web3 IIFE（先に読み込んでおく） -->
+  <script src="https://unpkg.com/@solana/web3.js@1.30.0/lib/index.iife.min.js"></script>
 
-            const connectButton = document.getElementById("connectWallet");
-            if (!connectButton) {
-                console.error("❌ connectWallet ボタンが見つかりません。HTMLを確認してください。");
-                return;
+  <!-- フル機能スクリプト（Phantom優先 + 両プログラムID対応 + 残高表示） -->
+  <script>
+    (function() {
+      // ====== 設定 ======
+      const RPC_URL = "https://api.mainnet-beta.solana.com"; // 読み取り専用
+      const MINT = "Va7yuUnSYdg23QjHjPAc9fkBrK3oD4mr3Ee52vFcyev"; // GRI Mint
+      const PROGRAM_IDS = [
+        "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA", // SPL Token (legacy)
+        "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"  // Token-2022 (extensions)
+      ];
+
+      const els = {
+        connectBtn: null,
+        addr: null,
+        balance: null,
+        hint: null,
+        syakeCount: null,
+        umeCount: null,
+      };
+
+      // ====== Phantom 優先プロバイダ解決 ======
+      function getPhantomProvider() {
+        const w = window;
+        if (w.solana?.providers?.length) {
+          const phantom = w.solana.providers.find((p) => p && p.isPhantom);
+          if (phantom) return phantom;
+        }
+        if (w.solana?.isPhantom) return w.solana;
+        if (w.phantom?.solana?.isPhantom) return w.phantom.solana; // 旧 alias
+        return null;
+      }
+
+      async function connectPhantom() {
+        const provider = getPhantomProvider();
+        if (!provider) {
+          alert('Phantom 拡張が見つかりません。ブラウザ拡張をインストール/有効化してください。');
+          return null;
+        }
+        const res = await provider.connect({ onlyIfTrusted: false });
+        const pubkey = res?.publicKey?.toString?.() || provider.publicKey?.toString?.();
+        return { provider, pubkey };
+      }
+
+      // ====== 投票（ローカル保存） ======
+      window.vote = function(kind) {
+        const key = kind === 'syake' ? 'vote_syake' : 'vote_ume';
+        const next = (Number(localStorage.getItem(key) || '0') + 1);
+        localStorage.setItem(key, String(next));
+        updateVoteUI();
+      };
+
+      function updateVoteUI() {
+        els.syakeCount.textContent = String(Number(localStorage.getItem('vote_syake') || '0'));
+        els.umeCount.textContent = String(Number(localStorage.getItem('vote_ume') || '0'));
+      }
+
+      // ====== 残高取得 ======
+      async function fetchGRIBalance(ownerBase58) {
+        try {
+          if (typeof solanaWeb3 === 'undefined') throw new Error('solanaWeb3 がまだ読み込まれていません');
+          const connection = new solanaWeb3.Connection(RPC_URL, 'confirmed');
+          const owner = new solanaWeb3.PublicKey(ownerBase58);
+
+          let found = false;
+          let amountStr = '0';
+
+          for (const pid of PROGRAM_IDS) {
+            const programId = new solanaWeb3.PublicKey(pid);
+            const res = await connection.getParsedTokenAccountsByOwner(owner, { programId });
+            for (const entry of res.value) {
+              const info = entry.account.data.parsed.info;
+              if (info.mint === MINT) {
+                const tok = info.tokenAmount;
+                amountStr = tok.uiAmountString ?? (typeof tok.uiAmount === 'number' ? String(tok.uiAmount) : '0');
+                found = true;
+                break;
+              }
             }
+            if (found) break;
+          }
 
-            connectButton.addEventListener("click", async function () {
-                console.log("🔵 ウォレット接続ボタンが押されました");
+          els.balance.textContent = `GRI 残高: ${amountStr} GRI`;
+          if (!found) console.log('GRI token account not found for owner (ATA 未作成/残高0の可能性)');
+        } catch (e) {
+          console.error('GRI balance fetch error:', e);
+          els.balance.textContent = 'GRI 残高: エラー';
+        }
+      }
 
-                try {
-                    console.log("🟡 ウォレット接続を試みます...");
-                    const response = await window.solana.connect({ onlyIfTrusted: false });
+      // ====== 初期化 ======
+      function bind() {
+        els.connectBtn = document.getElementById('connectWallet');
+        els.addr = document.getElementById('walletAddress');
+        els.balance = document.getElementById('griBalance');
+        els.hint = document.getElementById('hint');
+        els.syakeCount = document.getElementById('syakeCount');
+        els.umeCount = document.getElementById('umeCount');
 
-                    if (!window.solana.isConnected) {
-                        alert("❌ ウォレットが適切に接続されませんでした。もう一度試してください。");
-                        console.error("❌ window.solana.isConnected が false になっています。");
-                        return;
-                    }
+        updateVoteUI();
+        els.connectBtn?.addEventListener('click', async () => {
+          try {
+            const conn = await connectPhantom();
+            if (!conn) return;
+            const { provider, pubkey } = conn;
+            els.addr.textContent = `ウォレット: ${pubkey}`;
+            els.hint.style.display = 'block';
+            els.hint.textContent = '残高読取は Mainnet RPC から行います（ウォレット側ネットワークは不問）';
+            await fetchGRIBalance(pubkey);
 
-                    console.log("✅ ウォレット接続成功:", response.publicKey.toString());
-                    document.getElementById("walletAddress").textContent = `ウォレット: ${response.publicKey.toString()}`;
-
-                    await fetchGRIBalance(response.publicKey.toString());
-
-                } catch (error) {
-                    console.error("❌ ウォレット接続エラー:", error.message);
-                    alert(`❌ ウォレット接続に失敗しました: ${error.message}`);
-                }
-            });
-
-            async function fetchGRIBalance(walletAddress) {
-                console.log("🟡 GRI 残高を取得中...");
-
-                try {
-                    const connection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com", "confirmed");
-                    const GRI_TOKEN_MINT_ADDRESS = "Va7yuUnSYdg23QjHjPAc9fkBrK3oD4mr3Ee52vFcyev";
-
-                    const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
-                        new solanaWeb3.PublicKey(walletAddress),
-                        { programId: new solanaWeb3.PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA") }
-                    );
-
-                    let griBalance = 0;
-                    tokenAccounts.value.forEach(account => {
-                        if (account.account.data.parsed.info.mint === GRI_TOKEN_MINT_ADDRESS) {
-                            griBalance = account.account.data.parsed.info.tokenAmount.uiAmount;
-                        }
-                    });
-
-                    console.log("✅ GRI 残高取得成功:", griBalance);
-                    document.getElementById("griBalance").textContent = `GRI 残高: ${griBalance} GRI`;
-
-                } catch (error) {
-                    console.error("❌ GRIトークン取得エラー:", error.message);
-                    document.getElementById("griBalance").textContent = "GRI 残高: エラー";
-                }
-            }
+            // アカウントや接続状態の変化にも追従
+            provider?.on?.('accountChanged', () => location.reload());
+            provider?.on?.('disconnect', () => location.reload());
+          } catch (e) {
+            console.error(e);
+            alert(`ウォレット接続に失敗: ${e?.message || e}`);
+          }
         });
-    </script>
-    <script src="https://unpkg.com/@solana/web3.js@1.30.0/lib/index.iife.min.js"></script>
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bind);
+      } else {
+        bind();
+      }
+    })();
+  </script>
 </body>
 </html>
