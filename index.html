@@ -6,73 +6,22 @@
   <title>ONIGIRI コイン</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet" />
   <style>
-    body {
-      font-family: "Noto Sans JP", sans-serif;
-      margin: 0;
-      padding: 0;
-      background-color: #f8f8f8;
-      text-align: center;
-      color: #333;
-    }
-    header {
-      background-color: #2c3e50;
-      color: white;
-      padding: 15px 0;
-      font-size: 1.5em;
-    }
-    main {
-      width: 80%;
-      max-width: 800px;
-      margin: 20px auto;
-      padding: 20px;
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    }
-    img {
-      max-width: 200px;
-      height: auto;
-      margin: 20px;
-    }
-    .info {
-      font-size: 1.2em;
-      margin: 10px 0;
-    }
-    footer {
-      background-color: #2c3e50;
-      color: white;
-      padding: 10px 0;
-      margin-top: 20px;
-    }
-    .vote-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      margin-top: 20px;
-      gap: 24px;
-      flex-wrap: wrap;
-    }
-    .vote-item {
-      margin: 0 20px;
-      text-align: center;
-    }
-    .vote-button {
-      margin-top: 10px;
-      padding: 10px 20px;
-      font-size: 1em;
-      cursor: pointer;
-      border: none;
-      background-color: #3498db;
-      color: white;
-      border-radius: 10px;
-      transition: background 0.3s;
-    }
+    body { font-family: "Noto Sans JP", sans-serif; margin: 0; padding: 0; background-color: #f8f8f8; text-align: center; color: #333; }
+    header { background-color: #2c3e50; color: white; padding: 15px 0; font-size: 1.5em; }
+    main { width: 80%; max-width: 800px; margin: 20px auto; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); }
+    img { max-width: 200px; height: auto; margin: 20px; }
+    .info { font-size: 1.2em; margin: 10px 0; }
+    footer { background-color: #2c3e50; color: white; padding: 10px 0; margin-top: 20px; }
+    .vote-container { display: flex; justify-content: center; align-items: center; margin-top: 20px; gap: 24px; flex-wrap: wrap; }
+    .vote-item { margin: 0 20px; text-align: center; }
+    .vote-button { margin-top: 10px; padding: 10px 20px; font-size: 1em; cursor: pointer; border: none; background-color: #3498db; color: white; border-radius: 10px; transition: background 0.3s; }
     .vote-button:hover { background-color: #2980b9; }
     .wp-link { margin-top: 30px; font-size: 1.2em; }
     .additional-links { margin-top: 20px; text-align: left; display: inline-block; }
     .additional-links a { color: #007BFF; text-decoration: none; font-size: 1em; }
     .additional-links a:hover { text-decoration: underline; }
     .muted { opacity: .75; font-size: .95em; }
+    .tiny { opacity: .65; font-size: .85em; }
   </style>
 </head>
 <body>
@@ -101,6 +50,7 @@
     <p id="walletAddress">ウォレット未接続 / Wallet not connected</p>
     <p id="griBalance">GRI 残高: -</p>
     <p id="hint" class="muted" style="display:none"></p>
+    <p id="mintInfo" class="tiny" style="display:none"></p>
 
     <div class="wp-link">
       <a href="wp.html" target="_blank">ホワイトペーパーはこちら / View the Whitepaper</a>
@@ -119,18 +69,18 @@
     <p>&copy; 2025 ONIGIRI Coin. All Rights Reserved.</p>
   </footer>
 
-  <!-- Solana Web3 IIFE（先に読み込んでおく） -->
+  <!-- 先に web3.js を読み込む -->
   <script src="https://unpkg.com/@solana/web3.js@1.30.0/lib/index.iife.min.js"></script>
 
-  <!-- フル機能スクリプト（Phantom優先 + 両プログラムID対応 + 残高表示） -->
   <script>
     (function() {
       // ====== 設定 ======
-      const RPC_URL = "https://api.mainnet-beta.solana.com"; // 読み取り専用
-      const MINT = "Va7yuUnSYdg23QjHjPAc9fkBrK3oD4mr3Ee52vFcyev"; // GRI Mint
-      const PROGRAM_IDS = [
-        "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA", // SPL Token (legacy)
-        "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"  // Token-2022 (extensions)
+      const MINT = "Va7yuUnSYdg23QjHjPAc9fkBrK3oD4mr3Ee52vFcyev"; // GRI mint
+      const RPC_URLS = [
+        "https://api.mainnet-beta.solana.com",
+        // 予備（公開RPC。可用性確保用。必要に応じて並びを調整）
+        "https://rpc.ankr.com/solana",
+        "https://solana-api.projectserum.com"
       ];
 
       const els = {
@@ -140,9 +90,10 @@
         hint: null,
         syakeCount: null,
         umeCount: null,
+        mintInfo: null,
       };
 
-      // ====== Phantom 優先プロバイダ解決 ======
+      // ====== Phantom 優先 ======
       function getPhantomProvider() {
         const w = window;
         if (w.solana?.providers?.length) {
@@ -150,7 +101,7 @@
           if (phantom) return phantom;
         }
         if (w.solana?.isPhantom) return w.solana;
-        if (w.phantom?.solana?.isPhantom) return w.phantom.solana; // 旧 alias
+        if (w.phantom?.solana?.isPhantom) return w.phantom.solana;
         return null;
       }
 
@@ -165,7 +116,12 @@
         return { provider, pubkey };
       }
 
-      // ====== 投票（ローカル保存） ======
+      // ====== ユーティリティ ======
+      function updateVoteUI() {
+        els.syakeCount.textContent = String(Number(localStorage.getItem('vote_syake') || '0'));
+        els.umeCount.textContent = String(Number(localStorage.getItem('vote_ume') || '0'));
+      }
+
       window.vote = function(kind) {
         const key = kind === 'syake' ? 'vote_syake' : 'vote_ume';
         const next = (Number(localStorage.getItem(key) || '0') + 1);
@@ -173,42 +129,82 @@
         updateVoteUI();
       };
 
-      function updateVoteUI() {
-        els.syakeCount.textContent = String(Number(localStorage.getItem('vote_syake') || '0'));
-        els.umeCount.textContent = String(Number(localStorage.getItem('vote_ume') || '0'));
+      async function withRPCs(fn) {
+        let lastErr = null;
+        for (const url of RPC_URLS) {
+          try {
+            if (typeof solanaWeb3 === 'undefined') throw new Error('solanaWeb3 未ロード');
+            const c = new solanaWeb3.Connection(url, 'confirmed');
+            // 軽く ping
+            await c.getEpochInfo();
+            return await fn(c);
+          } catch (e) {
+            lastErr = e;
+            console.warn('RPC失敗をスキップ:', url, e);
+          }
+        }
+        throw lastErr || new Error('全てのRPCに失敗');
       }
 
-      // ====== 残高取得 ======
+      function programIdLabel(pid) {
+        const s = String(pid);
+        if (s === 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA') return 'SPL Token (legacy)';
+        if (s === 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb') return 'Token-2022 (extensions)';
+        return s;
+      }
+
+      // ====== 残高取得（mintフィルタ優先） ======
       async function fetchGRIBalance(ownerBase58) {
-        try {
-          if (typeof solanaWeb3 === 'undefined') throw new Error('solanaWeb3 がまだ読み込まれていません');
-          const connection = new solanaWeb3.Connection(RPC_URL, 'confirmed');
-          const owner = new solanaWeb3.PublicKey(ownerBase58);
+        const owner = new solanaWeb3.PublicKey(ownerBase58);
 
-          let found = false;
-          let amountStr = '0';
+        const { amountStr, found, program } = await withRPCs(async (conn) => {
+          // 1) mint で直接フィルタ（最もシンプル & プログラム差異に強い）
+          const parsedByMint = await conn.getParsedTokenAccountsByOwner(owner, { mint: new solanaWeb3.PublicKey(MINT) });
+          if (parsedByMint.value?.length) {
+            const info = parsedByMint.value[0].account.data.parsed.info;
+            const tok = info.tokenAmount;
+            const amt = tok.uiAmountString ?? (typeof tok.uiAmount === 'number' ? String(tok.uiAmount) : '0');
+            return { amountStr: amt, found: true, program: info.owner || 'unknown' };
+          }
 
+          // 2) 念のため programId で両方試す
+          const PROGRAM_IDS = [
+            'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+            'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'
+          ];
           for (const pid of PROGRAM_IDS) {
-            const programId = new solanaWeb3.PublicKey(pid);
-            const res = await connection.getParsedTokenAccountsByOwner(owner, { programId });
+            const res = await conn.getParsedTokenAccountsByOwner(owner, { programId: new solanaWeb3.PublicKey(pid) });
             for (const entry of res.value) {
               const info = entry.account.data.parsed.info;
               if (info.mint === MINT) {
                 const tok = info.tokenAmount;
-                amountStr = tok.uiAmountString ?? (typeof tok.uiAmount === 'number' ? String(tok.uiAmount) : '0');
-                found = true;
-                break;
+                const amt = tok.uiAmountString ?? (typeof tok.uiAmount === 'number' ? String(tok.uiAmount) : '0');
+                return { amountStr: amt, found: true, program: pid };
               }
             }
-            if (found) break;
           }
 
-          els.balance.textContent = `GRI 残高: ${amountStr} GRI`;
-          if (!found) console.log('GRI token account not found for owner (ATA 未作成/残高0の可能性)');
-        } catch (e) {
-          console.error('GRI balance fetch error:', e);
-          els.balance.textContent = 'GRI 残高: エラー';
+          // 3) 見つからない（ATA未作成 or 残高0）
+          return { amountStr: '0', found: false, program: null };
+        });
+
+        els.balance.textContent = `GRI 残高: ${amountStr} GRI`;
+        if (!found) {
+          els.hint.style.display = 'block';
+          els.hint.textContent = 'GRI のトークン口座が見つかりません（初受取前=ATA未作成の可能性）';
         }
+
+        // Mint の owner (= どのトークンプログラムか) も表示
+        try {
+          const mintOwner = await withRPCs(async (conn) => {
+            const acc = await conn.getAccountInfo(new solanaWeb3.PublicKey(MINT));
+            return acc?.owner?.toBase58?.() || String(acc?.owner || '');
+          });
+          if (mintOwner) {
+            els.mintInfo.style.display = 'block';
+            els.mintInfo.textContent = `Mint Program: ${programIdLabel(mintOwner)}`;
+          }
+        } catch {}
       }
 
       // ====== 初期化 ======
@@ -219,6 +215,7 @@
         els.hint = document.getElementById('hint');
         els.syakeCount = document.getElementById('syakeCount');
         els.umeCount = document.getElementById('umeCount');
+        els.mintInfo = document.getElementById('mintInfo');
 
         updateVoteUI();
         els.connectBtn?.addEventListener('click', async () => {
@@ -228,14 +225,13 @@
             const { provider, pubkey } = conn;
             els.addr.textContent = `ウォレット: ${pubkey}`;
             els.hint.style.display = 'block';
-            els.hint.textContent = '残高読取は Mainnet RPC から行います（ウォレット側ネットワークは不問）';
+            els.hint.textContent = '残高読取は複数RPCでフェイルオーバーします（ウォレット側ネットワークは不問）';
             await fetchGRIBalance(pubkey);
 
-            // アカウントや接続状態の変化にも追従
             provider?.on?.('accountChanged', () => location.reload());
             provider?.on?.('disconnect', () => location.reload());
           } catch (e) {
-            console.error(e);
+            console.error('connect failed', e);
             alert(`ウォレット接続に失敗: ${e?.message || e}`);
           }
         });
@@ -243,9 +239,7 @@
 
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', bind);
-      } else {
-        bind();
-      }
+      } else { bind(); }
     })();
   </script>
 </body>
