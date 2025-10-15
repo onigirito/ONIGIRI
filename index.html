@@ -96,24 +96,52 @@
       // ====== Phantom 優先 ======
       function getPhantomProvider() {
         const w = window;
-        if (w.solana?.providers?.length) {
-          const phantom = w.solana.providers.find((p) => p && p.isPhantom);
-          if (phantom) return phantom;
+        try {
+          if (w.solana?.providers?.length) {
+            const phantom = w.solana.providers.find((p) => p && p.isPhantom);
+            if (phantom) {
+              console.log('getPhantomProvider: found via window.solana.providers');
+              return phantom;
+            }
+          }
+          if (w.solana?.isPhantom) {
+            console.log('getPhantomProvider: found via window.solana.isPhantom');
+            return w.solana;
+          }
+          if (w.phantom?.solana?.isPhantom) {
+            console.log('getPhantomProvider: found via window.phantom.solana');
+            return w.phantom.solana;
+          }
+        } catch (e) {
+          console.warn('getPhantomProvider error', e);
         }
-        if (w.solana?.isPhantom) return w.solana;
-        if (w.phantom?.solana?.isPhantom) return w.phantom.solana;
+        console.log('getPhantomProvider: Phantom not found');
         return null;
       }
 
       async function connectPhantom() {
+        console.log('connectPhantom: start');
         const provider = getPhantomProvider();
         if (!provider) {
           alert('Phantom 拡張が見つかりません。ブラウザ拡張をインストール/有効化してください。');
           return null;
         }
-        const res = await provider.connect({ onlyIfTrusted: false });
-        const pubkey = res?.publicKey?.toString?.() || provider.publicKey?.toString?.();
-        return { provider, pubkey };
+        try {
+          console.log('connectPhantom: calling provider.connect()');
+          const res = await provider.connect({ onlyIfTrusted: false });
+          console.log('connectPhantom: connect success', res);
+          const pubkey = res?.publicKey?.toString?.() || provider.publicKey?.toString?.();
+          console.log('connectPhantom: pubkey', pubkey);
+          return { provider, pubkey };
+        } catch (e) {
+          console.error('connectPhantom: connect failed', e);
+          // ユーザー向けの情報も更新
+          try {
+            const msg = e?.message || String(e);
+            alert('ウォレット接続に失敗しました: ' + msg);
+          } catch {}
+          return null;
+        }
       }
 
       // ====== ユーティリティ ======
@@ -218,6 +246,13 @@
         els.mintInfo = document.getElementById('mintInfo');
 
         updateVoteUI();
+
+        if (typeof solanaWeb3 === 'undefined') {
+          console.error('bind: solanaWeb3 is not loaded');
+          els.hint.style.display = 'block';
+          els.hint.textContent = '内部エラー: Solana web3 ライブラリが読み込まれていません。ネットワークや CSP を確認してください。';
+        }
+
         els.connectBtn?.addEventListener('click', async () => {
           try {
             const conn = await connectPhantom();
@@ -228,8 +263,29 @@
             els.hint.textContent = '残高読取は複数RPCでフェイルオーバーします（ウォレット側ネットワークは不問）';
             await fetchGRIBalance(pubkey);
 
-            provider?.on?.('accountChanged', () => location.reload());
-            provider?.on?.('disconnect', () => location.reload());
+            // accountChanged ハンドラを改善: pubkey が来る場合は UI 更新、null の場合は切断扱い
+            try {
+              provider?.on?.('accountChanged', (newPubkey) => {
+                console.log('provider accountChanged', newPubkey);
+                if (!newPubkey) {
+                  console.log('accountChanged: no pubkey, reloading');
+                  return location.reload();
+                }
+                const pk = (typeof newPubkey?.toString === 'function') ? newPubkey.toString() : String(newPubkey);
+                els.addr.textContent = `ウォレット: ${pk}`;
+                // 再取得
+                fetchGRIBalance(pk).catch((e)=>console.warn('fetchGRIBalance after accountChanged failed', e));
+              });
+
+              provider?.on?.('disconnect', () => {
+                console.log('provider disconnect');
+                els.addr.textContent = 'ウォレット未接続 / Wallet not connected';
+                els.balance.textContent = 'GRI 残高: -';
+                els.hint.style.display = 'none';
+              });
+            } catch (e) {
+              console.warn('failed to bind provider events', e);
+            }
           } catch (e) {
             console.error('connect failed', e);
             alert(`ウォレット接続に失敗: ${e?.message || e}`);
@@ -244,6 +300,3 @@
   </script>
 </body>
 </html>
-
-
-
