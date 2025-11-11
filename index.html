@@ -95,25 +95,62 @@
 
       // ====== Phantom 優先 ======
       function getPhantomProvider() {
-        const w = window;
-        if (w.solana?.providers?.length) {
-          const phantom = w.solana.providers.find((p) => p && p.isPhantom);
-          if (phantom) return phantom;
+        if ('phantom' in window) {
+          const phantomProvider = window.phantom?.solana;
+          if (phantomProvider?.isPhantom) {
+            return phantomProvider;
+          }
         }
-        if (w.solana?.isPhantom) return w.solana;
-        if (w.phantom?.solana?.isPhantom) return w.phantom.solana;
+
+        // 複数のウォレットがある場合
+        if ('solana' in window) {
+          const provider = window.solana;
+          if (provider?.isPhantom) {
+            return provider;
+          }
+
+          // providers配列から探す
+          if (provider?.providers?.length) {
+            const phantom = provider.providers.find((p) => p?.isPhantom);
+            if (phantom) return phantom;
+          }
+        }
+
+        return null;
+      }
+
+      // Phantomプロバイダーが利用可能になるまで待機
+      async function waitForPhantom(maxAttempts = 10) {
+        for (let i = 0; i < maxAttempts; i++) {
+          const provider = getPhantomProvider();
+          if (provider) return provider;
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
         return null;
       }
 
       async function connectPhantom() {
-        const provider = getPhantomProvider();
+        // Phantomが読み込まれるまで待つ
+        const provider = await waitForPhantom();
         if (!provider) {
-          alert('Phantom 拡張が見つかりません。ブラウザ拡張をインストール/有効化してください。');
+          alert('Phantom 拡張が見つかりません。\nPhantomをインストールして、ページを再読み込みしてください。\n\nPhantom wallet extension not found.\nPlease install Phantom and reload the page.');
+          window.open('https://phantom.app/', '_blank');
           return null;
         }
-        const res = await provider.connect({ onlyIfTrusted: false });
-        const pubkey = res?.publicKey?.toString?.() || provider.publicKey?.toString?.();
-        return { provider, pubkey };
+
+        try {
+          const resp = await provider.connect();
+          const pubkey = resp.publicKey.toString();
+          return { provider, pubkey };
+        } catch (error) {
+          if (error.code === 4001) {
+            // ユーザーがリクエストを拒否
+            alert('接続がキャンセルされました。\nConnection cancelled.');
+          } else {
+            throw error;
+          }
+          return null;
+        }
       }
 
       // ====== ユーティリティ ======
@@ -207,6 +244,38 @@
         } catch {}
       }
 
+      // ====== 自動接続 ======
+      async function tryAutoConnect() {
+        try {
+          const provider = await waitForPhantom();
+          if (!provider) return;
+
+          // 既に接続済みの場合は自動接続
+          const resp = await provider.connect({ onlyIfTrusted: true });
+          if (resp?.publicKey) {
+            const pubkey = resp.publicKey.toString();
+            els.connectBtn.textContent = '接続済み / Connected';
+            els.connectBtn.style.backgroundColor = '#27ae60';
+            els.connectBtn.disabled = true;
+            els.addr.textContent = `ウォレット: ${pubkey.substring(0, 4)}...${pubkey.substring(pubkey.length - 4)}`;
+            await fetchGRIBalance(pubkey);
+
+            // イベントリスナーを設定
+            provider?.on?.('accountChanged', (publicKey) => {
+              if (publicKey) {
+                location.reload();
+              } else {
+                location.reload();
+              }
+            });
+            provider?.on?.('disconnect', () => location.reload());
+          }
+        } catch (e) {
+          // 自動接続失敗は無視（ユーザーが手動で接続できる）
+          console.log('Auto-connect not available:', e);
+        }
+      }
+
       // ====== 初期化 ======
       function bind() {
         els.connectBtn = document.getElementById('connectWallet');
@@ -218,21 +287,54 @@
         els.mintInfo = document.getElementById('mintInfo');
 
         updateVoteUI();
+
+        // ページロード時に自動接続を試みる
+        tryAutoConnect();
         els.connectBtn?.addEventListener('click', async () => {
+          // ボタンを無効化して二重クリックを防止
+          els.connectBtn.disabled = true;
+          els.connectBtn.textContent = '接続中... / Connecting...';
+
           try {
             const conn = await connectPhantom();
-            if (!conn) return;
+            if (!conn) {
+              els.connectBtn.disabled = false;
+              els.connectBtn.textContent = 'ウォレットを接続 / Connect Wallet';
+              return;
+            }
+
             const { provider, pubkey } = conn;
-            els.addr.textContent = `ウォレット: ${pubkey}`;
+
+            // ウォレット接続成功
+            els.connectBtn.textContent = '接続済み / Connected';
+            els.connectBtn.style.backgroundColor = '#27ae60';
+            els.addr.textContent = `ウォレット: ${pubkey.substring(0, 4)}...${pubkey.substring(pubkey.length - 4)}`;
             els.hint.style.display = 'block';
             els.hint.textContent = '残高読取は複数RPCでフェイルオーバーします（ウォレット側ネットワークは不問）';
+
+            // 残高を取得
             await fetchGRIBalance(pubkey);
 
-            provider?.on?.('accountChanged', () => location.reload());
-            provider?.on?.('disconnect', () => location.reload());
+            // ウォレットイベントのリスナーを設定
+            provider?.on?.('accountChanged', (publicKey) => {
+              if (publicKey) {
+                console.log('Account changed to:', publicKey.toString());
+                location.reload();
+              } else {
+                console.log('Account disconnected');
+                location.reload();
+              }
+            });
+
+            provider?.on?.('disconnect', () => {
+              console.log('Wallet disconnected');
+              location.reload();
+            });
           } catch (e) {
             console.error('connect failed', e);
-            alert(`ウォレット接続に失敗: ${e?.message || e}`);
+            alert(`ウォレット接続に失敗しました:\n${e?.message || e}\n\nWallet connection failed:\n${e?.message || e}`);
+            els.connectBtn.disabled = false;
+            els.connectBtn.textContent = 'ウォレットを接続 / Connect Wallet';
           }
         });
       }
