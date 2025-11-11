@@ -129,6 +129,16 @@
         return null;
       }
 
+      // タイムアウト付きPromise
+      function withTimeout(promise, ms, errorMsg) {
+        return Promise.race([
+          promise,
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error(errorMsg)), ms)
+          )
+        ]);
+      }
+
       async function connectPhantom() {
         // Phantomが読み込まれるまで待つ
         const provider = await waitForPhantom();
@@ -139,13 +149,26 @@
         }
 
         try {
-          const resp = await provider.connect();
+          console.log('Phantomへの接続を試みています...');
+          // 30秒のタイムアウトを設定
+          const resp = await withTimeout(
+            provider.connect(),
+            30000,
+            'ウォレット接続がタイムアウトしました'
+          );
           const pubkey = resp.publicKey.toString();
+          console.log('接続成功:', pubkey);
           return { provider, pubkey };
         } catch (error) {
+          console.error('接続エラー詳細:', error);
+
           if (error.code === 4001) {
             // ユーザーがリクエストを拒否
             alert('接続がキャンセルされました。\nConnection cancelled.');
+          } else if (error.message?.includes('timeout') || error.message?.includes('タイムアウト')) {
+            alert('ウォレット接続がタイムアウトしました。\nPhantomウォレットが起動しているか確認して、再度お試しください。\n\nConnection timeout.\nPlease make sure Phantom wallet is running and try again.');
+          } else if (error.message?.includes('Network request failed')) {
+            alert('ネットワークエラーが発生しました。\n\n考えられる原因：\n• インターネット接続を確認してください\n• Phantomウォレットを再起動してください\n• ブラウザを再読み込みしてください\n\nNetwork request failed.\nPlease check your internet connection and try again.');
           } else {
             throw error;
           }
@@ -172,12 +195,15 @@
           try {
             if (typeof solanaWeb3 === 'undefined') throw new Error('solanaWeb3 未ロード');
             const c = new solanaWeb3.Connection(url, 'confirmed');
-            // 軽く ping
-            await c.getEpochInfo();
-            return await fn(c);
+
+            // 軽く ping（10秒タイムアウト）
+            await withTimeout(c.getEpochInfo(), 10000, 'RPC ping タイムアウト');
+
+            // 実際の処理（30秒タイムアウト）
+            return await withTimeout(fn(c), 30000, 'RPC処理タイムアウト');
           } catch (e) {
             lastErr = e;
-            console.warn('RPC失敗をスキップ:', url, e);
+            console.warn('RPC失敗をスキップ:', url, e?.message || e);
           }
         }
         throw lastErr || new Error('全てのRPCに失敗');
@@ -192,87 +218,122 @@
 
       // ====== 残高取得（mintフィルタ優先） ======
       async function fetchGRIBalance(ownerBase58) {
-        const owner = new solanaWeb3.PublicKey(ownerBase58);
+        try {
+          els.balance.textContent = 'GRI 残高: 読み込み中... / Loading...';
 
-        const { amountStr, found, program } = await withRPCs(async (conn) => {
-          // 1) mint で直接フィルタ（最もシンプル & プログラム差異に強い）
-          const parsedByMint = await conn.getParsedTokenAccountsByOwner(owner, { mint: new solanaWeb3.PublicKey(MINT) });
-          if (parsedByMint.value?.length) {
-            const info = parsedByMint.value[0].account.data.parsed.info;
-            const tok = info.tokenAmount;
-            const amt = tok.uiAmountString ?? (typeof tok.uiAmount === 'number' ? String(tok.uiAmount) : '0');
-            return { amountStr: amt, found: true, program: info.owner || 'unknown' };
-          }
+          const owner = new solanaWeb3.PublicKey(ownerBase58);
 
-          // 2) 念のため programId で両方試す
-          const PROGRAM_IDS = [
-            'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
-            'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'
-          ];
-          for (const pid of PROGRAM_IDS) {
-            const res = await conn.getParsedTokenAccountsByOwner(owner, { programId: new solanaWeb3.PublicKey(pid) });
-            for (const entry of res.value) {
-              const info = entry.account.data.parsed.info;
-              if (info.mint === MINT) {
-                const tok = info.tokenAmount;
-                const amt = tok.uiAmountString ?? (typeof tok.uiAmount === 'number' ? String(tok.uiAmount) : '0');
-                return { amountStr: amt, found: true, program: pid };
+          const { amountStr, found, program } = await withRPCs(async (conn) => {
+            // 1) mint で直接フィルタ（最もシンプル & プログラム差異に強い）
+            const parsedByMint = await conn.getParsedTokenAccountsByOwner(owner, { mint: new solanaWeb3.PublicKey(MINT) });
+            if (parsedByMint.value?.length) {
+              const info = parsedByMint.value[0].account.data.parsed.info;
+              const tok = info.tokenAmount;
+              const amt = tok.uiAmountString ?? (typeof tok.uiAmount === 'number' ? String(tok.uiAmount) : '0');
+              return { amountStr: amt, found: true, program: info.owner || 'unknown' };
+            }
+
+            // 2) 念のため programId で両方試す
+            const PROGRAM_IDS = [
+              'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+              'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'
+            ];
+            for (const pid of PROGRAM_IDS) {
+              const res = await conn.getParsedTokenAccountsByOwner(owner, { programId: new solanaWeb3.PublicKey(pid) });
+              for (const entry of res.value) {
+                const info = entry.account.data.parsed.info;
+                if (info.mint === MINT) {
+                  const tok = info.tokenAmount;
+                  const amt = tok.uiAmountString ?? (typeof tok.uiAmount === 'number' ? String(tok.uiAmount) : '0');
+                  return { amountStr: amt, found: true, program: pid };
+                }
               }
             }
-          }
 
-          // 3) 見つからない（ATA未作成 or 残高0）
-          return { amountStr: '0', found: false, program: null };
-        });
-
-        els.balance.textContent = `GRI 残高: ${amountStr} GRI`;
-        if (!found) {
-          els.hint.style.display = 'block';
-          els.hint.textContent = 'GRI のトークン口座が見つかりません（初受取前=ATA未作成の可能性）';
-        }
-
-        // Mint の owner (= どのトークンプログラムか) も表示
-        try {
-          const mintOwner = await withRPCs(async (conn) => {
-            const acc = await conn.getAccountInfo(new solanaWeb3.PublicKey(MINT));
-            return acc?.owner?.toBase58?.() || String(acc?.owner || '');
+            // 3) 見つからない（ATA未作成 or 残高0）
+            return { amountStr: '0', found: false, program: null };
           });
-          if (mintOwner) {
-            els.mintInfo.style.display = 'block';
-            els.mintInfo.textContent = `Mint Program: ${programIdLabel(mintOwner)}`;
+
+          els.balance.textContent = `GRI 残高: ${amountStr} GRI`;
+          if (!found) {
+            els.hint.style.display = 'block';
+            els.hint.textContent = 'GRI のトークン口座が見つかりません（初受取前=ATA未作成の可能性）';
           }
-        } catch {}
+
+          // Mint の owner (= どのトークンプログラムか) も表示
+          try {
+            const mintOwner = await withRPCs(async (conn) => {
+              const acc = await conn.getAccountInfo(new solanaWeb3.PublicKey(MINT));
+              return acc?.owner?.toBase58?.() || String(acc?.owner || '');
+            });
+            if (mintOwner) {
+              els.mintInfo.style.display = 'block';
+              els.mintInfo.textContent = `Mint Program: ${programIdLabel(mintOwner)}`;
+            }
+          } catch {}
+        } catch (error) {
+          console.error('残高取得エラー:', error);
+          els.balance.textContent = 'GRI 残高: 取得失敗 / Failed to load';
+          els.hint.style.display = 'block';
+          els.hint.textContent = '残高の取得に失敗しました。ネットワーク接続を確認してください。 / Failed to fetch balance. Please check your network connection.';
+        }
       }
 
       // ====== 自動接続 ======
       async function tryAutoConnect() {
         try {
+          console.log('自動接続を試みています...');
           const provider = await waitForPhantom();
-          if (!provider) return;
+          if (!provider) {
+            console.log('Phantomプロバイダーが見つかりません');
+            return;
+          }
 
-          // 既に接続済みの場合は自動接続
-          const resp = await provider.connect({ onlyIfTrusted: true });
+          // 既に接続済みの場合は自動接続（タイムアウト10秒）
+          const resp = await withTimeout(
+            provider.connect({ onlyIfTrusted: true }),
+            10000,
+            '自動接続タイムアウト'
+          );
+
           if (resp?.publicKey) {
             const pubkey = resp.publicKey.toString();
+            console.log('自動接続成功:', pubkey);
+
+            // UIを更新
             els.connectBtn.textContent = '接続済み / Connected';
             els.connectBtn.style.backgroundColor = '#27ae60';
             els.connectBtn.disabled = true;
             els.addr.textContent = `ウォレット: ${pubkey.substring(0, 4)}...${pubkey.substring(pubkey.length - 4)}`;
-            await fetchGRIBalance(pubkey);
+
+            // 残高を非同期で取得
+            fetchGRIBalance(pubkey).catch(err => {
+              console.error('自動接続後の残高取得に失敗:', err);
+            });
 
             // イベントリスナーを設定
             provider?.on?.('accountChanged', (publicKey) => {
               if (publicKey) {
+                console.log('Account changed:', publicKey.toString());
                 location.reload();
               } else {
+                console.log('Account disconnected');
                 location.reload();
               }
             });
-            provider?.on?.('disconnect', () => location.reload());
+            provider?.on?.('disconnect', () => {
+              console.log('Wallet disconnected');
+              location.reload();
+            });
           }
         } catch (e) {
           // 自動接続失敗は無視（ユーザーが手動で接続できる）
-          console.log('Auto-connect not available:', e);
+          // タイムアウトや信頼されていない場合は正常な動作
+          if (e?.message?.includes('タイムアウト') || e?.code === 4001) {
+            console.log('自動接続スキップ（手動接続が必要）');
+          } else {
+            console.log('自動接続失敗:', e?.message || e);
+          }
         }
       }
 
@@ -305,15 +366,17 @@
 
             const { provider, pubkey } = conn;
 
-            // ウォレット接続成功
+            // ウォレット接続成功 - すぐにUIを更新
             els.connectBtn.textContent = '接続済み / Connected';
             els.connectBtn.style.backgroundColor = '#27ae60';
             els.addr.textContent = `ウォレット: ${pubkey.substring(0, 4)}...${pubkey.substring(pubkey.length - 4)}`;
             els.hint.style.display = 'block';
             els.hint.textContent = '残高読取は複数RPCでフェイルオーバーします（ウォレット側ネットワークは不問）';
 
-            // 残高を取得
-            await fetchGRIBalance(pubkey);
+            // 残高を非同期で取得（失敗しても接続は維持）
+            fetchGRIBalance(pubkey).catch(err => {
+              console.error('残高取得に失敗しましたが、ウォレットは接続されています:', err);
+            });
 
             // ウォレットイベントのリスナーを設定
             provider?.on?.('accountChanged', (publicKey) => {
