@@ -243,7 +243,8 @@
           console.log('これからPhantomの接続確認ポップアップが表示されるはずです');
 
           // 30秒のタイムアウトを設定
-          const connectPromise = provider.connect();
+          // onlyIfTrusted: false で必ずユーザー確認を求める
+          const connectPromise = provider.connect({ onlyIfTrusted: false });
           console.log('connect() Promise created:', connectPromise);
 
           const resp = await withTimeout(
@@ -465,8 +466,9 @@
 
         updateVoteUI();
 
-        // ページロード時に自動接続を試みる
-        tryAutoConnect();
+        // 自動接続は無効化（GRI支払いテストのため、明示的な接続が必要）
+        // tryAutoConnect();
+
         els.connectBtn?.addEventListener('click', async () => {
           // ボタンを無効化して二重クリックを防止
           els.connectBtn.disabled = true;
