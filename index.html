@@ -127,10 +127,12 @@
       // ====== 設定 ======
       const MINT = "Va7yuUnSYdg23QjHjPAc9fkBrK3oD4mr3Ee52vFcyev"; // GRI mint
       const RPC_URLS = [
+        // 信頼性の高い無料RPC（ブラウザアクセス可能）
+        "https://solana-mainnet.rpc.extrnode.com",
+        "https://solana.public-rpc.com",
+        "https://rpc.ankr.com/solana", // APIキー不要の公開エンドポイント
         "https://api.mainnet-beta.solana.com",
-        // 予備（公開RPC。可用性確保用。必要に応じて並びを調整）
-        "https://rpc.ankr.com/solana",
-        "https://solana-api.projectserum.com"
+        "https://mainnet.helius-rpc.com/?api-key=public"
       ];
 
       const els = {
@@ -274,7 +276,7 @@
             alert('ウォレット接続がタイムアウトしました。\nPhantomウォレットが起動しているか確認して、再度お試しください。\n\nConnection timeout.\nPlease make sure Phantom wallet is running and try again.');
           } else if (error.message?.includes('Network request failed')) {
             console.log('ネットワークリクエストエラー');
-            alert('ネットワークエラーが発生しました。\n\n考えられる原因：\n• Phantomの接続確認ポップアップが表示されましたか？\n• ブラウザのポップアップブロックを確認してください\n• Phantomウォレットを再起動してください\n• ブラウザを再読み込みしてください\n\nNetwork request failed.\nPlease check if Phantom popup was blocked and try again.');
+            alert('接続時にネットワークエラーが発生しました。\n\n考えられる原因：\n• Phantomの接続確認ポップアップが表示されましたか？\n• ブラウザのポップアップブロックを確認してください\n• Phantomウォレットを再起動してください\n• RPCエンドポイントが一時的に利用できない可能性があります\n\n注意: エラーが残高取得時に発生している場合、ウォレット自体は接続されています。\n\nNetwork request failed.\nNote: If error occurs during balance fetch, wallet may be connected.');
           } else {
             console.log('予期しないエラー');
             throw error;
@@ -300,19 +302,22 @@
         let lastErr = null;
         for (const url of RPC_URLS) {
           try {
+            console.log(`RPC接続試行: ${url}`);
             if (typeof solanaWeb3 === 'undefined') throw new Error('solanaWeb3 未ロード');
             const c = new solanaWeb3.Connection(url, 'confirmed');
 
-            // 軽く ping（10秒タイムアウト）
-            await withTimeout(c.getEpochInfo(), 10000, 'RPC ping タイムアウト');
+            // 軽く ping（5秒タイムアウトに短縮）
+            await withTimeout(c.getEpochInfo(), 5000, 'RPC ping タイムアウト');
+            console.log(`✓ RPC接続成功: ${url}`);
 
-            // 実際の処理（30秒タイムアウト）
-            return await withTimeout(fn(c), 30000, 'RPC処理タイムアウト');
+            // 実際の処理（20秒タイムアウトに短縮）
+            return await withTimeout(fn(c), 20000, 'RPC処理タイムアウト');
           } catch (e) {
             lastErr = e;
-            console.warn('RPC失敗をスキップ:', url, e?.message || e);
+            console.warn(`✗ RPC失敗 (${url}):`, e?.message || e);
           }
         }
+        console.error('全てのRPCエンドポイントに失敗しました');
         throw lastErr || new Error('全てのRPCに失敗');
       }
 
@@ -382,7 +387,7 @@
           console.error('残高取得エラー:', error);
           els.balance.textContent = 'GRI 残高: 取得失敗 / Failed to load';
           els.hint.style.display = 'block';
-          els.hint.textContent = '残高の取得に失敗しました。ネットワーク接続を確認してください。 / Failed to fetch balance. Please check your network connection.';
+          els.hint.textContent = '残高の取得に失敗しました（全RPCエンドポイントが利用不可）。しばらく待ってから再読み込みしてください。 / Failed to fetch balance (all RPC endpoints unavailable). Please wait and reload the page.';
         }
       }
 
