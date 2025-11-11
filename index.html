@@ -74,6 +74,56 @@
 
   <script>
     (function() {
+      // ====== iframe検出 ======
+      function isInIframe() {
+        try {
+          return window.self !== window.top;
+        } catch (e) {
+          return true;
+        }
+      }
+
+      function checkIframeAndWarn() {
+        if (isInIframe()) {
+          console.warn('⚠️ このページはiframe内で表示されています');
+          console.warn('⚠️ Phantomウォレットはセキュリティ上の理由でiframe内からの接続をブロックします');
+          console.warn('⚠️ 新しいタブで開いてください');
+
+          // 警告を表示
+          const warning = document.createElement('div');
+          warning.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #ff6b6b;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            z-index: 10000;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+          `;
+          warning.innerHTML = `
+            ⚠️ このページはiframe内で表示されているため、ウォレット接続できません<br>
+            <button onclick="window.open(window.location.href, '_blank')" style="
+              margin-top: 10px;
+              padding: 8px 16px;
+              background: white;
+              color: #ff6b6b;
+              border: none;
+              border-radius: 5px;
+              cursor: pointer;
+              font-weight: bold;
+            ">新しいタブで開く / Open in New Tab</button>
+          `;
+          document.body.insertBefore(warning, document.body.firstChild);
+
+          return true;
+        }
+        return false;
+      }
+
       // ====== 設定 ======
       const MINT = "Va7yuUnSYdg23QjHjPAc9fkBrK3oD4mr3Ee52vFcyev"; // GRI mint
       const RPC_URLS = [
@@ -92,6 +142,8 @@
         umeCount: null,
         mintInfo: null,
       };
+
+      const inIframe = checkIframeAndWarn();
 
       // ====== Phantom 優先 ======
       function getPhantomProvider() {
@@ -162,6 +214,13 @@
       }
 
       async function connectPhantom() {
+        // iframe内ではウォレット接続できない
+        if (inIframe) {
+          console.error('iframe内ではウォレット接続できません');
+          alert('⚠️ iframe内ではウォレット接続できません\n\nPhantomウォレットはセキュリティ上の理由で、iframe内からの接続をブロックします。\n\n上部の赤いバーの「新しいタブで開く」ボタンをクリックしてください。\n\n⚠️ Cannot connect wallet in iframe\n\nPhantom wallet blocks connections from iframes for security reasons.\n\nPlease click "Open in New Tab" button in the red bar above.');
+          return null;
+        }
+
         // Phantomが読み込まれるまで待つ
         console.log('=== connectPhantom 開始 ===');
         const provider = await waitForPhantom();
@@ -329,6 +388,12 @@
 
       // ====== 自動接続 ======
       async function tryAutoConnect() {
+        // iframe内では自動接続をスキップ
+        if (inIframe) {
+          console.log('iframe内のため自動接続をスキップします');
+          return;
+        }
+
         try {
           console.log('自動接続を試みています...');
           const provider = await waitForPhantom();
