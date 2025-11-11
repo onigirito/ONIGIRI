@@ -95,27 +95,49 @@
 
       // ====== Phantom 優先 ======
       function getPhantomProvider() {
+        console.log('=== Phantom検出開始 ===');
+        console.log('window.phantom:', window.phantom);
+        console.log('window.solana:', window.solana);
+        console.log('window.phantom?.solana:', window.phantom?.solana);
+
+        // 方法1: window.phantom.solana (推奨)
         if ('phantom' in window) {
           const phantomProvider = window.phantom?.solana;
+          console.log('window.phantom.solana found:', phantomProvider);
           if (phantomProvider?.isPhantom) {
+            console.log('✓ Phantomプロバイダー検出成功 (window.phantom.solana)');
+            console.log('Provider details:', {
+              isPhantom: phantomProvider.isPhantom,
+              publicKey: phantomProvider.publicKey?.toString(),
+              isConnected: phantomProvider.isConnected
+            });
             return phantomProvider;
           }
         }
 
-        // 複数のウォレットがある場合
+        // 方法2: window.solana
         if ('solana' in window) {
           const provider = window.solana;
+          console.log('window.solana found:', provider);
+          console.log('window.solana.isPhantom:', provider?.isPhantom);
+
           if (provider?.isPhantom) {
+            console.log('✓ Phantomプロバイダー検出成功 (window.solana)');
             return provider;
           }
 
           // providers配列から探す
           if (provider?.providers?.length) {
+            console.log('複数のプロバイダーが見つかりました:', provider.providers.length);
             const phantom = provider.providers.find((p) => p?.isPhantom);
-            if (phantom) return phantom;
+            if (phantom) {
+              console.log('✓ Phantomプロバイダー検出成功 (providers配列)');
+              return phantom;
+            }
           }
         }
 
+        console.log('✗ Phantomプロバイダーが見つかりませんでした');
         return null;
       }
 
@@ -141,35 +163,61 @@
 
       async function connectPhantom() {
         // Phantomが読み込まれるまで待つ
+        console.log('=== connectPhantom 開始 ===');
         const provider = await waitForPhantom();
+
         if (!provider) {
+          console.error('Phantomプロバイダーが見つかりません');
           alert('Phantom 拡張が見つかりません。\nPhantomをインストールして、ページを再読み込みしてください。\n\nPhantom wallet extension not found.\nPlease install Phantom and reload the page.');
           window.open('https://phantom.app/', '_blank');
           return null;
         }
 
+        console.log('✓ Phantomプロバイダー取得成功');
+        console.log('Provider type:', typeof provider);
+        console.log('Provider.connect type:', typeof provider.connect);
+        console.log('Provider.isConnected:', provider.isConnected);
+        console.log('Provider.publicKey:', provider.publicKey?.toString());
+
         try {
-          console.log('Phantomへの接続を試みています...');
+          console.log('provider.connect() を呼び出します...');
+          console.log('これからPhantomの接続確認ポップアップが表示されるはずです');
+
           // 30秒のタイムアウトを設定
+          const connectPromise = provider.connect();
+          console.log('connect() Promise created:', connectPromise);
+
           const resp = await withTimeout(
-            provider.connect(),
+            connectPromise,
             30000,
             'ウォレット接続がタイムアウトしました'
           );
+
+          console.log('connect() レスポンス:', resp);
+          console.log('resp.publicKey:', resp?.publicKey);
+
           const pubkey = resp.publicKey.toString();
-          console.log('接続成功:', pubkey);
+          console.log('✓ 接続成功! Public Key:', pubkey);
           return { provider, pubkey };
         } catch (error) {
-          console.error('接続エラー詳細:', error);
+          console.error('=== 接続エラー発生 ===');
+          console.error('エラーオブジェクト:', error);
+          console.error('エラーメッセージ:', error?.message);
+          console.error('エラーコード:', error?.code);
+          console.error('エラースタック:', error?.stack);
 
           if (error.code === 4001) {
             // ユーザーがリクエストを拒否
+            console.log('ユーザーが接続をキャンセルしました');
             alert('接続がキャンセルされました。\nConnection cancelled.');
           } else if (error.message?.includes('timeout') || error.message?.includes('タイムアウト')) {
+            console.log('接続がタイムアウトしました');
             alert('ウォレット接続がタイムアウトしました。\nPhantomウォレットが起動しているか確認して、再度お試しください。\n\nConnection timeout.\nPlease make sure Phantom wallet is running and try again.');
           } else if (error.message?.includes('Network request failed')) {
-            alert('ネットワークエラーが発生しました。\n\n考えられる原因：\n• インターネット接続を確認してください\n• Phantomウォレットを再起動してください\n• ブラウザを再読み込みしてください\n\nNetwork request failed.\nPlease check your internet connection and try again.');
+            console.log('ネットワークリクエストエラー');
+            alert('ネットワークエラーが発生しました。\n\n考えられる原因：\n• Phantomの接続確認ポップアップが表示されましたか？\n• ブラウザのポップアップブロックを確認してください\n• Phantomウォレットを再起動してください\n• ブラウザを再読み込みしてください\n\nNetwork request failed.\nPlease check if Phantom popup was blocked and try again.');
           } else {
+            console.log('予期しないエラー');
             throw error;
           }
           return null;
