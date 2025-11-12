@@ -1,0 +1,35 @@
+tasks:
+  scan_market:
+    type: "python_module"
+    module: "tasks.scan_market:main"
+    auto: true
+    interval_sec: 1800  # 30分
+    description: "市場状況をスキャンして重要な変動を検出"
+
+  test_trade:
+    type: "python_module"
+    module: "tasks.test_trade:main"
+    auto: false
+    description: "少額テストトレードで環境・UI挙動を確認"
+
+  analyze_portfolio:
+    type: "python_module"
+    module: "tasks.analyze_portfolio:main"
+    auto: true
+    interval_sec: 3600  # 1時間
+    description: "ポートフォリオ全体の状況を分析してレポート生成"
+
+  browser_explore:
+    type: "python_module"
+    module: "tasks.browser_explore:main"
+    auto: false
+    description: "ブラウザUIを解析して構造・ボタン配置を理解"
+
+# リスク管理設定
+risk_limits:
+  max_loss_per_day: 20000
+  max_position_size_pct: 2.0
+  test_trade_max_amount: 1000
+  allowed_trade_hours:
+    start: "09:00"
+    end: "15:00"
